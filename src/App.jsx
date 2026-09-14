@@ -632,7 +632,8 @@ const [authReady, setAuthReady] = useState(!supabaseConfigured);
 
   const [successOrder, setSuccessOrder] =
     useState(null);
-
+  const [selectedProduct, setSelectedProduct] = 
+     useState(null);
   const [toast, setToast] =
     useState("");
 
@@ -1878,6 +1879,9 @@ const [authReady, setAuthReady] = useState(!supabaseConfigured);
           onBuy={
             buyNow
           }
+          onDetails={
+            setSelectedProduct
+          }
           onShop={(
             category = "All",
             collection = "All"
@@ -1953,6 +1957,9 @@ const [authReady, setAuthReady] = useState(!supabaseConfigured);
           onBuy={
             buyNow
           }
+          onDetails={
+            setSelectedProduct
+          }
         />
       )}
 
@@ -1977,6 +1984,9 @@ const [authReady, setAuthReady] = useState(!supabaseConfigured);
           }
           onBuy={
             buyNow
+          }
+          onDetails={
+            setSelectedProduct
           }
           onShop={() =>
             navigate("shop")
@@ -2315,6 +2325,19 @@ const [authReady, setAuthReady] = useState(!supabaseConfigured);
   saveHero={updateHero}
   showToast={showToast}
 />
+      )}
+
+      {/* =====================================================
+          PRODUCT DETAILS
+      ===================================================== */}
+
+      {selectedProduct && (
+        <ProductDetailsModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
+          onAdd={addToCart}
+          onBuy={buyNow}
+        />
       )}
 
       {/* =====================================================
@@ -2670,6 +2693,7 @@ function HomePage({
   onAdd,
   onBuy,
   onShop,
+  onDetails,
 }) {
   const safeCategories =
     normalizeCategories(
@@ -2840,18 +2864,6 @@ function HomePage({
   </b>
 
 </div>
-          <div className="hero-price-card">
-
-            <small>
-              UP TO
-            </small>
-
-            <b>
-              40% OFF
-            </b>
-
-          </div>
-
         </div>
 
       </section>
@@ -2966,12 +2978,14 @@ function HomePage({
         {groupedCategories.length >
         0 ? (
           groupedCategories.map(
-            (category) => (
+            (category, index) => (
               <button
                 key={
                   category.id
                 }
-                className="category-card"
+                className={`category-card ${
+                  index >= 7 ? "mobile-extra-category" : ""
+                }`}
                 onClick={() =>
                   onShop(
                     category.name,
@@ -3043,6 +3057,17 @@ function HomePage({
           </div>
         )}
 
+        {groupedCategories.length > 0 && (
+          <button
+            type="button"
+            className="mobile-see-all-card mobile-category-see-all"
+            onClick={() => onShop("All", "All")}
+          >
+            <span>→</span>
+            <strong>SEE ALL</strong>
+          </button>
+        )}
+
       </section>
 
       {/* ALL PRODUCTS */}
@@ -3064,6 +3089,9 @@ function HomePage({
         }
         onBuy={
           onBuy
+        }
+        onDetails={
+          onDetails
         }
         onViewAll={() =>
           onShop(
@@ -3132,6 +3160,9 @@ function HomePage({
         onBuy={
           onBuy
         }
+        onDetails={
+          onDetails
+        }
         onViewAll={() =>
           onShop(
             "All",
@@ -3160,6 +3191,9 @@ function HomePage({
         onBuy={
           onBuy
         }
+        onDetails={
+          onDetails
+        }
         onViewAll={() =>
           onShop(
             "All",
@@ -3187,6 +3221,9 @@ function HomePage({
         }
         onBuy={
           onBuy
+        }
+        onDetails={
+          onDetails
         }
         onViewAll={() =>
           onShop(
@@ -3285,6 +3322,9 @@ function HomePage({
         onBuy={
           onBuy
         }
+        onDetails={
+          onDetails
+        }
         onViewAll={() =>
           onShop(
             "All",
@@ -3350,6 +3390,7 @@ function ProductShowcase({
   onAdd,
   onBuy,
   onViewAll,
+  onDetails,
 }) {
   return (
     <section className="showcase-section">
@@ -3371,31 +3412,28 @@ function ProductShowcase({
         <div className="product-grid">
 
           {products.map(
-            (product) => (
+            (product, index) => (
               <ProductCard
-                key={
-                  product.id
-                }
-                product={
-                  product
-                }
-                liked={
-                  favorites.includes(
-                    product.id
-                  )
-                }
-                onFavorite={
-                  onFavorite
-                }
-                onAdd={
-                  onAdd
-                }
-                onBuy={
-                  onBuy
-                }
+                key={product.id}
+                product={product}
+                liked={favorites.includes(product.id)}
+                onFavorite={onFavorite}
+                onAdd={onAdd}
+                onBuy={onBuy}
+                onDetails={onDetails}
+                mobileHidden={index >= 7}
               />
             )
           )}
+
+          <button
+            type="button"
+            className="mobile-see-all-card mobile-product-see-all"
+            onClick={onViewAll}
+          >
+            <span>→</span>
+            <strong>SEE ALL</strong>
+          </button>
 
         </div>
       ) : (
@@ -3418,187 +3456,113 @@ function ProductCard({
   onFavorite,
   onAdd,
   onBuy,
+  onDetails,
+  mobileHidden = false,
 }) {
   const discount =
-    product.oldPrice >
-    product.price
+    product.oldPrice > product.price
       ? Math.round(
-          ((product.oldPrice -
-            product.price) /
-            product.oldPrice) *
-            100
+          ((product.oldPrice - product.price) / product.oldPrice) * 100
         )
       : 0;
 
   return (
-    <article className="product-card">
-
+    <article
+      className={`product-card ${
+        mobileHidden ? "mobile-extra-product" : ""
+      }`}
+      onClick={() => onDetails && onDetails(product)}
+    >
       <div className="product-image">
-
         {product.badge && (
-          <span className="product-badge">
-            {
-              product.badge
-            }
-          </span>
+          <span className="product-badge">{product.badge}</span>
         )}
 
-        {discount >
-          0 && (
-          <span className="discount-badge">
-            -{discount}%
-          </span>
+        {discount > 0 && (
+          <span className="discount-badge">-{discount}%</span>
         )}
 
         <button
-          className={`product-heart ${
-            liked
-              ? "liked"
-              : ""
-          }`}
-          onClick={() =>
-            onFavorite(
-              product.id
-            )
-          }
+          className={`product-heart ${liked ? "liked" : ""}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onFavorite(product.id);
+          }}
         >
-          {liked
-            ? "♥"
-            : "♡"}
+          {liked ? "♥" : "♡"}
         </button>
 
         <img
-          src={
-            product.image ||
-            demoImages.lipstick
-          }
-          alt={
-            product.name
-          }
+          src={product.image || demoImages.lipstick}
+          alt={product.name}
         />
 
         <div className="product-hover">
-
           <button
-            onClick={() =>
-              onBuy(product)
-            }
+            onClick={(e) => {
+              e.stopPropagation();
+              onBuy(product);
+            }}
           >
             BUY NOW
           </button>
 
           <button
-            onClick={() =>
-              onAdd(product)
-            }
+            onClick={(e) => {
+              e.stopPropagation();
+              onAdd(product);
+            }}
           >
             ADD TO BAG
           </button>
-
         </div>
-
       </div>
 
       <div className="product-info">
-
         <span className="product-category">
-          {
-            product.category ||
-            "Beauty"
-          }
+          {product.category || "Beauty"}
         </span>
 
-        <h3>
-          {
-            product.name
-          }
-        </h3>
+        <h3>{product.name}</h3>
 
         <div className="product-rating">
-
-          <b>
-            ★★★★★
-          </b>
-
+          <b>★★★★★</b>
           <span>
-            {
-              product.rating ||
-              4.8
-            }{" "}
-            (
-            {
-              product.reviews ||
-              0
-            }
-            )
+            {product.rating || 4.8} ({product.reviews || 0})
           </span>
-
         </div>
 
         <div className="product-price">
+          <strong>{money(product.price)}</strong>
 
-          <strong>
-            {
-              money(
-                product.price
-              )
-            }
-          </strong>
-
-          {product.oldPrice >
-            product.price && (
-            <del>
-              {
-                money(
-                  product.oldPrice
-                )
-              }
-            </del>
+          {product.oldPrice > product.price && (
+            <del>{money(product.oldPrice)}</del>
           )}
 
-          {discount >
-            0 && (
-            <span>
-              {
-                discount
-              }
-              % OFF
-            </span>
-          )}
-
+          {discount > 0 && <span>{discount}% OFF</span>}
         </div>
 
         <div className="product-buttons">
-
           <button
-            onClick={() =>
-              onAdd(product)
-            }
+            onClick={(e) => {
+              e.stopPropagation();
+              onAdd(product);
+            }}
           >
             ADD TO BAG →
           </button>
 
           <button
-            className={
-              liked
-                ? "favorite-active"
-                : ""
-            }
-            onClick={() =>
-              onFavorite(
-                product.id
-              )
-            }
+            className={liked ? "favorite-active" : ""}
+            onClick={(e) => {
+              e.stopPropagation();
+              onFavorite(product.id);
+            }}
           >
-            {liked
-              ? "♥"
-              : "♡"}
+            {liked ? "♥" : "♡"}
           </button>
-
         </div>
-
       </div>
-
     </article>
   );
 }
@@ -3620,6 +3584,7 @@ function ShopPage({
   onFavorite,
   onAdd,
   onBuy,
+  onDetails,
 }) {
   let heading =
     "Shop Beauty";
@@ -3827,6 +3792,9 @@ function ShopPage({
                 onBuy={
                   onBuy
                 }
+                onDetails={
+                  onDetails
+                }
               />
             )
           )}
@@ -3875,6 +3843,7 @@ function FavoritesPage({
   onAdd,
   onBuy,
   onShop,
+  onDetails,
 }) {
   return (
     <main className="inner-page">
@@ -3926,6 +3895,9 @@ function FavoritesPage({
                 }
                 onBuy={
                   onBuy
+                }
+                onDetails={
+                  onDetails
                 }
               />
             )
@@ -9204,6 +9176,116 @@ function AdminHero({
       </div>
 
     </main>
+  );
+}
+function ProductDetailsModal({
+  product,
+  onClose,
+  onAdd,
+  onBuy,
+}) {
+  if (!product) return null;
+
+  const discount =
+    product.oldPrice > product.price
+      ? Math.round(
+          ((product.oldPrice - product.price) / product.oldPrice) * 100
+        )
+      : 0;
+
+  return (
+    <div className="modal-background product-details-backdrop">
+      <div className="product-details-modal">
+        <button className="modal-close" onClick={onClose}>
+          ×
+        </button>
+
+        <div className="product-details-layout">
+          <div className="product-details-image">
+            <img
+              src={product.image || demoImages.lipstick}
+              alt={product.name}
+            />
+
+            {product.badge && (
+              <span className="product-details-badge">
+                {product.badge}
+              </span>
+            )}
+          </div>
+
+          <div className="product-details-content">
+            <span className="product-details-category">
+              {product.category || "Beauty"}
+            </span>
+
+            <h2>{product.name}</h2>
+
+            <div className="details-rating">
+              <span>★★★★★</span>
+              <b>
+                {product.rating || 4.8}
+              </b>
+              <small>
+                {product.reviews || 0} Reviews
+              </small>
+            </div>
+
+            <div className="details-price">
+              <strong>{money(product.price)}</strong>
+
+              {product.oldPrice > product.price && (
+                <del>{money(product.oldPrice)}</del>
+              )}
+
+              {discount > 0 && (
+                <span>{discount}% OFF</span>
+              )}
+            </div>
+
+            <p className="details-description">
+              Experience premium beauty with the
+              {product.name}. A carefully selected
+              Makeup Plaza beauty essential designed
+              for a luxurious everyday look.
+            </p>
+
+            <div className="details-highlights">
+              <div>
+                <span>✓</span>
+                <p>Premium Quality</p>
+              </div>
+
+              <div>
+                <span>✓</span>
+                <p>Cash on Delivery</p>
+              </div>
+
+              <div>
+                <span>✓</span>
+                <p>Easy Order Support</p>
+              </div>
+            </div>
+
+            <div className="details-actions">
+              <button
+                className="details-add-button"
+                onClick={() => onAdd(product)}
+              >
+                ADD TO BAG
+              </button>
+
+              <button
+                className="details-buy-button"
+                onClick={() => onBuy(product)}
+              >
+                BUY NOW →
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
